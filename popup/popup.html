@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>喝水提醒助手</title>
+  <meta name="description" content="智能喝水提醒，帮助你保持健康的饮水习惯" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+
+  <!-- ── 顶部 Header ── -->
+  <header class="header">
+    <div class="header-left">
+      <div class="logo" aria-label="喝水提醒助手">💧</div>
+      <div>
+        <div class="header-title">喝水提醒助手</div>
+        <div class="header-subtitle" id="header-date">今天 · 加载中...</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" id="btn-settings" title="打开设置" aria-label="设置">⚙️</button>
+    </div>
+  </header>
+
+  <!-- ── 主内容 ── -->
+  <main class="content">
+
+    <!-- 今日进度卡片 -->
+    <section class="progress-card" aria-label="今日饮水进度">
+      <div class="progress-header">
+        <div>
+          <div class="progress-label">今日已喝</div>
+          <div class="progress-amount">
+            <span id="today-total">0</span><span class="progress-unit"> ml</span>
+          </div>
+          <div class="progress-goal">目标 <span id="daily-goal">2000</span>ml</div>
+        </div>
+        <div class="progress-pct-badge" id="pct-badge">0%</div>
+      </div>
+      <div class="progress-bar-wrap" role="progressbar" aria-label="饮水进度" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+        <div class="progress-bar-fill" id="progress-bar" style="width: 0%"></div>
+      </div>
+    </section>
+
+    <!-- 下次提醒倒计时 -->
+    <div class="next-reminder" aria-live="polite">
+      <div class="next-reminder-left">
+        <div class="reminder-dot" id="reminder-dot"></div>
+        <span class="reminder-status-text" id="reminder-status-text">下次提醒</span>
+      </div>
+      <div class="reminder-countdown" id="reminder-countdown">--:--</div>
+    </div>
+
+    <!-- 快速加水 -->
+    <section class="quick-add-section" aria-label="快速记录饮水量">
+      <div class="section-label">快速记录</div>
+      <div class="quick-btns">
+        <button class="quick-btn" id="btn-200" data-amount="200" aria-label="喝了200毫升">+200ml</button>
+        <button class="quick-btn" id="btn-250" data-amount="250" aria-label="喝了250毫升">+250ml</button>
+        <button class="quick-btn" id="btn-300" data-amount="300" aria-label="喝了300毫升">+300ml</button>
+        <button class="quick-btn custom" id="btn-custom" aria-label="自定义饮水量">自定义</button>
+      </div>
+
+      <!-- 主按钮 -->
+      <button class="drank-btn" id="btn-drank" aria-label="记录默认饮水量">
+        💧 我喝水了（<span id="default-amount">250</span>ml）
+      </button>
+    </section>
+
+    <!-- 控制行：开关 + 暂停 -->
+    <div class="controls-row">
+      <!-- 启用/禁用开关 -->
+      <button class="toggle-btn active" id="btn-toggle" aria-label="开关提醒">
+        <span id="toggle-icon">🔔</span>
+        <span id="toggle-text">提醒已开启</span>
+      </button>
+
+      <!-- 暂停下拉 -->
+      <div class="pause-wrap">
+        <button class="pause-btn" id="btn-pause" aria-label="暂停提醒" aria-expanded="false" aria-haspopup="listbox">
+          ⏸ <span id="pause-btn-text">暂停</span>
+        </button>
+        <div class="pause-dropdown" id="pause-dropdown" role="listbox" aria-label="暂停选项">
+          <div class="pause-option" data-minutes="30" role="option" tabindex="0">暂停 30 分钟</div>
+          <div class="pause-option" data-minutes="60" role="option" tabindex="0">暂停 1 小时</div>
+          <div class="pause-option" data-minutes="120" role="option" tabindex="0">暂停 2 小时</div>
+          <div class="pause-option" data-minutes="-1" role="option" tabindex="0">今天不再提醒</div>
+          <div class="pause-option cancel" id="cancel-pause" role="option" tabindex="0" style="display:none">✓ 取消暂停</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 今日饮水记录 -->
+    <section class="records-section" aria-label="今日饮水记录">
+      <div class="records-title">今日记录</div>
+      <div class="records-list" id="records-list">
+        <span style="color: var(--text-muted); font-size: 12px;">暂无记录</span>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── Footer ── -->
+  <footer class="footer">
+    <span class="footer-date" id="footer-weekday">--</span>
+    <button class="settings-link" id="footer-settings-btn" aria-label="打开设置页面">
+      ⚙️ 详细设置
+    </button>
+  </footer>
+
+  <!-- ── 自定义饮水量弹窗 ── -->
+  <div class="modal-overlay" id="custom-modal" role="dialog" aria-modal="true" aria-label="自定义饮水量">
+    <div class="modal">
+      <h3>🥤 自定义饮水量</h3>
+      <input
+        type="number"
+        class="modal-input"
+        id="custom-amount-input"
+        placeholder="输入饮水量（ml）"
+        min="1"
+        max="2000"
+        aria-label="饮水量（毫升）"
+      />
+      <div class="modal-actions">
+        <button class="modal-cancel" id="modal-cancel">取消</button>
+        <button class="modal-confirm" id="modal-confirm">确认记录</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Toast 通知 ── -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="popup.js" type="module"></script>
+</body>
+</html>
