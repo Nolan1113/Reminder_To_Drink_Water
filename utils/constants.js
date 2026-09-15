@@ -5,9 +5,11 @@
 
 /** Alarm 名称 */
 export const ALARM_NAMES = {
-  MAIN: 'water_reminder_main',      // 主循环提醒 Alarm
-  SNOOZE: 'water_reminder_snooze',  // 稍后提醒 Alarm
-  FOOD: 'food_reminder_daily',      // 点外卖每日定时 Alarm
+  MAIN: 'water_reminder_main',           // 主循环提醒 Alarm
+  SNOOZE: 'water_reminder_snooze',       // 稍后提醒 Alarm
+  FOOD: 'food_reminder_daily',           // 点外卖每日定时 Alarm
+  AUTO_CLOSE_WATER: 'notif_auto_close_water', // 喝水通知自动关闭 Alarm
+  AUTO_CLOSE_FOOD:  'notif_auto_close_food',  // 外卖通知自动关闭 Alarm
 };
 
 /** chrome.storage.local 存储 Key */

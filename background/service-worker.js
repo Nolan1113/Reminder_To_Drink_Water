@@ -67,6 +67,15 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
       await handleSnoozeAlarm();
     } else if (alarm.name === ALARM_NAMES.FOOD) {
       await handleFoodAlarm();
+    } else if (alarm.name === ALARM_NAMES.AUTO_CLOSE_WATER) {
+      // 啦水通知自动关闭（Alarm 方案，不受 SW 生命周期影响）
+      console.log('[SW] AUTO_CLOSE_WATER 触发，关闭啦水通知');
+      await clearNotification(NOTIFICATION_IDS.MAIN);
+      await clearNotification(NOTIFICATION_IDS.SNOOZE);
+    } else if (alarm.name === ALARM_NAMES.AUTO_CLOSE_FOOD) {
+      // 外卖通知自动关闭
+      console.log('[SW] AUTO_CLOSE_FOOD 触发，关闭外卖通知');
+      await clearNotification(NOTIFICATION_IDS.FOOD);
     } else {
       console.log('[SW] 未知 Alarm 名称，忽略:', alarm.name);
     }

@@ -1,12 +1,16 @@
 // ============================================================
 // background/notification-manager.js — 系统通知管理
 // 创建通知、防重复逻辑、处理通知按钮点击
-// 修复：requireInteraction:true 防止系统强制收起，
-//       由 setTimeout 按用户设定时长精确关闭
+//
+// ⚠️ 修复说明：
+//   MV3 Service Worker 在 Alarm 触发后约 30s 内会被浏览器休眠，
+//   setTimeout 超过此窗口的回调永远不会执行（1分钟/2分钟自动关闭失效）。
+//   修复方案：改用 chrome.alarms 调度自动关闭 —— Alarm 不依赖 SW 存活，
+//   到期后浏览器主动唤醒 SW，再执行 notificationsAPI.clear()。
 // ============================================================
 
 import { notificationsAPI, actionAPI, runtimeAPI } from '../utils/browser-api.js';
-import { NOTIFICATION_IDS, STORAGE_KEYS } from '../utils/constants.js';
+import { NOTIFICATION_IDS, ALARM_NAMES, STORAGE_KEYS } from '../utils/constants.js';
 import { getSettings } from '../services/settings-service.js';
 import { getTodayTotal } from '../services/water-service.js';
 import { getValue, setValue } from '../services/storage-service.js';
@@ -93,20 +97,26 @@ export async function sendReminderNotification({ notifId = NOTIFICATION_IDS.MAIN
 
     console.log('[NotifManager] 通知创建成功, id:', createdId);
 
-    // ── 自动关闭：按用户设置的显示时长关闭通知 ──
-    // MV3 Service Worker 在处理 alarm 事件后有 5 分钟生命周期，
-    // 只要 notifDurationSeconds <= 300（5分钟）setTimeout 均可靠
-    const rawMs = (settings.notifDurationSeconds ?? 30) * 1000;
-    const autoCloseMs = Math.min(Math.max(rawMs, MIN_NOTIF_DURATION_MS), MAX_NOTIF_DURATION_MS);
-    console.log('[NotifManager] 通知将在', autoCloseMs / 1000, '秒后自动关闭');
-    setTimeout(async () => {
-      try {
-        await notificationsAPI.clear(notifId);
-        console.log('[NotifManager] 通知已自动关闭:', notifId);
-      } catch (e) {
-        // 用户已手动关闭，忽略
-      }
-    }, autoCloseMs);
+    // ── 自动关闭：混合策略 ──
+    // • < 60秒：用 setTimeout（SW 处理 Alarm 事件期间必然存活，可靠）
+    // • ≥ 60秒：改用 chrome.alarms（SW 可能被休眠，setTimeout 回调永远不执行）
+    const rawSec = settings.notifDurationSeconds ?? 30;
+    const clampedMs = Math.min(Math.max(rawSec * 1000, MIN_NOTIF_DURATION_MS), MAX_NOTIF_DURATION_MS);
+    console.log('[NotifManager] 通知将在', clampedMs / 1000, '秒后自动关闭');
+
+    if (clampedMs < 60_000) {
+      // 短时长：setTimeout 可靠，SW 在这个窗口内必然存活
+      setTimeout(async () => {
+        try { await notificationsAPI.clear(notifId); } catch (_) {}
+        console.log('[NotifManager] 通知已自动关闭（setTimeout）:', notifId);
+      }, clampedMs);
+    } else {
+      // 长时长：SW 可能已被休眠，改由浏览器持久管理的 Alarm 唤醒 SW 再关闭
+      const delayInMinutes = clampedMs / 60_000;
+      try { await chrome.alarms.clear(ALARM_NAMES.AUTO_CLOSE_WATER); } catch (_) {}
+      chrome.alarms.create(ALARM_NAMES.AUTO_CLOSE_WATER, { delayInMinutes });
+      console.log('[NotifManager] 通知自动关闭已通过 Alarm 调度，延迟', delayInMinutes, '分钟');
+    }
 
     // 更新 Badge
     if (settings.badgeEnabled) {
@@ -202,16 +212,22 @@ export async function sendFoodReminderNotification() {
 
     console.log('[NotifManager] 点外卖通知创建成功, id:', createdId);
 
-    // 按用户设定的外卖提醒显示时长自动关闭
-    const rawMs = (settings.foodReminderDurationSeconds ?? 300) * 1000;
-    const autoCloseMs = Math.min(Math.max(rawMs, MIN_NOTIF_DURATION_MS), MAX_NOTIF_DURATION_MS);
-    console.log('[NotifManager] 点外卖通知将在', autoCloseMs / 1000, '秒后自动关闭');
-    setTimeout(async () => {
-      try {
-        await notificationsAPI.clear(notifId);
-        console.log('[NotifManager] 点外卖通知已自动关闭');
-      } catch (e) { /* 用户已手动关闭，忽略 */ }
-    }, autoCloseMs);
+    // 按用户设定的外卖提醒显示时长自动关闭（混合策略，同喝水通知）
+    const rawSec = settings.foodReminderDurationSeconds ?? 300;
+    const clampedMs = Math.min(Math.max(rawSec * 1000, MIN_NOTIF_DURATION_MS), MAX_NOTIF_DURATION_MS);
+    console.log('[NotifManager] 点外卖通知将在', clampedMs / 1000, '秒后自动关闭');
+
+    if (clampedMs < 60_000) {
+      setTimeout(async () => {
+        try { await notificationsAPI.clear(notifId); } catch (_) {}
+        console.log('[NotifManager] 点外卖通知已自动关闭（setTimeout）');
+      }, clampedMs);
+    } else {
+      const delayInMinutes = clampedMs / 60_000;
+      try { await chrome.alarms.clear(ALARM_NAMES.AUTO_CLOSE_FOOD); } catch (_) {}
+      chrome.alarms.create(ALARM_NAMES.AUTO_CLOSE_FOOD, { delayInMinutes });
+      console.log('[NotifManager] 点外卖通知自动关闭已通过 Alarm 调度，延迟', delayInMinutes, '分钟');
+    }
 
   } catch (err) {
     console.error('[NotifManager] 点外卖通知创建失败:', err);
