@@ -68,9 +68,9 @@ function populateForm(settings) {
   fields.soundEnabled.checked = settings.soundEnabled;
 
   // 喜水通知显示时长下拉
-  const durStr = String(settings.notifDurationSeconds ?? 30);
+  const durStr = String(settings.notifDurationSeconds ?? 180);
   const durOption = fields.notifDuration.querySelector(`option[value="${durStr}"]`);
-  fields.notifDuration.value = durOption ? durStr : '30';
+  fields.notifDuration.value = durOption ? durStr : '180';
 
   // 外卖提醒字段回填
   fields.foodEnabled.checked = settings.foodReminderEnabled ?? true;
@@ -197,7 +197,7 @@ async function saveAll() {
     notifEnabled: fields.notifEnabled.checked,
     badgeEnabled: fields.badgeEnabled.checked,
     soundEnabled: fields.soundEnabled.checked,
-    notifDurationSeconds: parseInt(fields.notifDuration.value, 10) || 30,
+    notifDurationSeconds: parseInt(fields.notifDuration.value, 10) || 180,
     // 外卖提醒
     foodReminderEnabled: fields.foodEnabled.checked,
     foodReminderTime: fields.foodTime.value || '11:20',

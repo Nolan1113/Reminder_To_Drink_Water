@@ -48,7 +48,7 @@ export const DEFAULT_SETTINGS = {
   notifEnabled: true,       // 是否启用系统通知
   badgeEnabled: true,       // 是否启用 Badge 提醒
   soundEnabled: false,      // 是否启用声音提醒（预留）
-  notifDurationSeconds: 30, // 通知自动关闭时长（秒），范围 1s ~ 600s（10分钟）
+  notifDurationSeconds: 180, // 通知自动关闭时长（秒），范围 1s ~ 600s（10分钟）；默认 3 分钟
   // 点外卖提醒
   foodReminderEnabled: true,          // 是否启用点外卖提醒
   foodReminderTime: '11:20',          // 点外卖提醒时间

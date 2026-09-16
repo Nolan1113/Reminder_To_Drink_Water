@@ -100,7 +100,15 @@ export async function sendReminderNotification({ notifId = NOTIFICATION_IDS.MAIN
     // ── 自动关闭：混合策略 ──
     // • < 60秒：用 setTimeout（SW 处理 Alarm 事件期间必然存活，可靠）
     // • ≥ 60秒：改用 chrome.alarms（SW 可能被休眠，setTimeout 回调永远不执行）
-    const rawSec = settings.notifDurationSeconds ?? 30;
+    // ── 喝水通知显示时长默认值 ──
+    // 若用户未在设置页自定义，则使用此处的默认值（单位：秒）。
+    // 如需手动调整默认时长，修改下方 DEFAULT_NOTIF_DURATION_SEC 的数值即可：
+    //   30  → 30 秒
+    //   60  → 1 分钟
+    //   180 → 3 分钟（当前默认）
+    //   300 → 5 分钟
+    const DEFAULT_NOTIF_DURATION_SEC = 180; // ← 在此修改默认显示时长（秒）
+    const rawSec = settings.notifDurationSeconds ?? DEFAULT_NOTIF_DURATION_SEC;
     const clampedMs = Math.min(Math.max(rawSec * 1000, MIN_NOTIF_DURATION_MS), MAX_NOTIF_DURATION_MS);
     console.log('[NotifManager] 通知将在', clampedMs / 1000, '秒后自动关闭');
 
